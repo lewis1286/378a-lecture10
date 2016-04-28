@@ -1,0 +1,260 @@
+\documentclass{article}
+\usepackage{ee378a}
+%\usepackage{amsmath}
+
+\begin{document}
+\lecturetitle{10}{Lecture 10: State Estimation of Hidden Markov Process}{Alon Devorah, David Hallac, Kevin Shutzberg}{01/13/2015}
+In this lecture, we complete and expand the recursive algorithm for state estimation of a hidden markov process through a memoryless noisy channel. 
+
+
+
+
+\section{Recap}
+
+Let there be a Markov Process $\{X_n\}_{n \geq 1}$ sent through a memoryless channel, and measurements $\{Y_n\}_{n \geq 1}$.
+
+Then the stochastic system is characterized by:
+
+\begin{eqnarray*}
+P_x, \{P_{X_t | X_{t-1}}\}_{t \geq 2}, \{P_{Y_t | X_t}\}_{t \geq 1}
+\end{eqnarray*}
+
+\textbf{Let}
+\begin{eqnarray*}
+\alpha_t(X_t) = p(x_t | y^t)\\
+\beta_t(X_t) = p(x_t | y^{t-1})\\
+\gamma_t(X_t) = p(x_t) | y^n\\
+\end{eqnarray*}
+
+In lecture 9, we found that:
+
+\begin{eqnarray}
+\alpha_t(X_t) = \frac{\beta_t(X_t)p(y_t | x_t)}{\sum_{\tilde{x}_t}^{}\beta_t(X_t)p(y_t | \tilde{x}_t)}\\
+\beta_{t+1}(X_t) = \sum_{x_t}^{}\alpha_t(x_t)p(x_{t+1} | x_t)\\
+\gamma_t(X_t) = \sum_{X_{t+1}}^{}\frac{\gamma_{t+1}\alpha_{t+1}p(x_{t+!} | x_t)}{\beta_{t+1}(X_{t+1})}
+\end{eqnarray}
+
+\subsection{Finding $ P(x^n | y^n) $}
+\textbf{Claim:} 
+\begin{eqnarray*}
+X^{t-1} - (X_t, Y^n) - X^{n}_{t+1}\\
+\end{eqnarray*}
+
+ie given all observations $Y^n$, $X^n$ is still a Markov Process.
+
+\textbf{Proof:}  We prove using the "Markov Lemma", described in Lecture 9.
+\begin{align*}
+P(x^n,y^n) &= \prod_{i=1}^{n}p(x_i | x_{i-1})p(y_i | x_i)\\
+&= \prod_{i=1}^{t}p(x_i | x_{i-1})p(y_i | x_i) \prod_{i = t+1}^{n}p(x_i | x_{i-1})p(y_i | x_i)\\
+\end{align*}
+
+These two terms can be seen as two general funtions:
+
+\begin{eqnarray*}
+\phi_1(x^t, y^t)\phi_2(x_{t}^{n}, y_{t+1}^{n})\\
+\phi_1(x^{t+1}, x_t, y^n) \phi_2(x_t, x_{t+1}^{n}, y^n)\\
+\end{eqnarray*}
+
+.. Where we've trivially expanded the vectors $Y$ to go to $n$ as this includes any subset of $Y^n$.  
+
+Looking at the posterior:
+\begin{eqnarray*}
+p(x^n | y^n) &= p(x_n | y^n) p(x_{n-1} | x_n, y^n)p(x_{n-2} | x_{n-1}, y^n),\dots, p(x_1 | x_2, y^n)\\
+&= p(x_n | y^n) \prod_{t=1}^{n-1}p(x_t | x_{t+1}, y^t)\\
+\end{eqnarray*}
+
+We let $y^n \rightarrow y^t$ because we already have clean state information $x_{t+1}$
+
+\begin{eqnarray*}
+p(x_t | x_{t+1}, y^t) &= \frac{p(x_t , x_{t+1} | y^t)}{p(x_{t+1} | y^t)} = \frac{p(x_t | y^t) p(x_{t+1} | x_t , y^t)}{p(x_{t+1} | y^t)}\\
+&= \frac{\alpha_t (x_t) p(x_{t+1} | x_t)}{\beta_{t+1}(x_{t+1})}\\
+\Rightarrow p(x^n | y^n) &= \gamma_n (x_n) \prod_{t=1}^{n-1} \frac{\alpha_t (x_t) p(x_{t+1} | x_t)}{\beta_{t+1} (x_{t+1})}\\
+log p(x^n | y^n) &= \sum_{t = 1}^{n} g_t (x_t, x_{t+1})
+\end{eqnarray*}
+
+Where  we define $g$ as:
+\begin{eqnarray*}
+g_t(x_t, x_{t+1}) &:= log \frac{\alpha_t (x_t) p(x_{t+1} | x_t)}{\beta_{t+1}(x_{t+1})}, \hspace{2 mm} t \in \{1, \dots , n-1\}\\
+g_t(x_t, x_{t+1}) &:= log \gamma_n (x_n), \hspace{2 mm } t = n
+\end{eqnarray*}	
+
+\begin{itemize}
+	\item  if $g$ was a funtcion of $x_t$ only, we could simply use a greedy algorithm and maximize each term.
+	\item since $g_t$ is a function of both $x_t, x_{t+1}$
+\end{itemize}
+
+
+
+
+
+
+
+
+
+
+\begin{definition}
+\textbf{Entropy}: Let U a discrete R.V. taking values in $\mathcal{U}$.  The \textbf{entropy} of U is defined by: 
+\begin{eqnarray}
+%H(U)\triangleq \sum_{u \in \mathcal{U}} P_U^{(u)}\cdot \log{(\frac{1}{P_U^u}) \triangleq E[s(u)]
+\end{eqnarray}
+\end{definition}
+
+\textbf{Note:} The entropy $H(U)$ is not a random variable. In fact it is not a function of the object $U$, but rather a functional (or property) of the underlying distribution $P_U^{(u)}, u \in \mathcal{U}$. An analogy is $E[U]$, which is also a number (the mean) corresponding to the distribution. 
+
+\textbf{Jensen's Inequality:} Let $Q$ denote a {\em convex} function, and $X$ denote any random variable. Jensen's inequality states that
+\begin{align}
+E[Q(X)] \geq Q(E[X]).
+\end{align} 
+Further, if $Q$ is strictly convex, equality holds iff $X$ is deterministic.
+
+{\em Example}: $Q(x) = e^{x}$ is a convex function. Therefore, for a random variable X, we have by Jensen's inquality:
+\begin{align*}
+E[ e^X ] \geq e^{E[X]}
+\end{align*}
+Conversely, if $Q$ is a {\em concave} function, then
+\begin{align}
+E[Q(X) \leq Q(E[X]).
+\end{align}
+{\em Example}: $Q(x) = \log x $ is a concave function. Therefore, for a random variable $X \geq 0$, 
+\begin{align}
+E[ \log X ] \leq \log E[X] 
+\end{align}
+
+
+
+\subsection{Properties of Entropy}
+W.L.O.G suppose $\mathcal{U}$ = \{1,2,...,m\}
+\begin{enumerate}
+\item $H(U) \leq \log{m}$, with equality iff $P(u) = \frac{1}{m} \forall u$ (i.e. uniform).
+
+\textbf{Proof:}
+\begin{align}
+H(U) &= E[\log\frac{1}{P(U}] \\
+ &\leq \log E[\frac{1}{P(U)}] \text{ (Jensen's inequality, since log is concave)} \\
+ &= \log \sum_u P(U) \cdot \frac{1}{P(U)} \\
+ &= \log m. 
+\end{align}
+Equality in Jensen, iff $\frac{1}{P(U)}$ is deterministic, iff $p(u) = \frac{1}{m}$
+\item $H(U) \geq 0$, with equality iff U is deterministic.
+
+\textbf{Proof:}
+\begin{align}
+H(U) = E[\log\frac{1}{P(U)}] \geq 0 \text{ since } \log \frac{1}{P(U)}\geq 0
+\end{align}
+The equality occurs iff $\log \frac{1}{P(U)} = 0$ with probability 1, iff P(U) = 1 w.p. 1 iff U is deterministic.
+
+\item For a PMF $q$, defined on the same alphabet as $p$, define
+      \begin{equation} \label{eq:property3}
+           H_q(U) \triangleq \sum\limits_{u \in \mathcal{U}} p(u) \log \frac{1}{q(u)}.
+       \end{equation}
+       Note that this is the expected surprise function, but instead of the surprise associated with $p$, it is the surprise associated $U$, which is distributed according to PMF p, but incorrectly assumed to be having the PMF of $q$. The following result stipulates, that we will (on average) be more surprised if we had the wrong distribution in mind. This makes intuitive sense! Mathematically, 
+
+      \begin{equation} \label{eq:property3b}
+           H(U) \leq H_q(U),
+       \end{equation}
+with equality iff $q = p$.
+
+\textbf{Proof:}
+\begin{align}
+       H(U) - H_q(U) &= E \left[ \log \frac{1}{p(u)} \right] - E \left[ \log \frac{1}{q(u)} \right] \\
+       H(U) - H_q(U) &= E \left[ \log \frac{q(u)}{p(u)} \right]
+\end{align}
+By Jensen's, we know that $E \left[ \log \frac{q(u)}{p(u)} \right] \leq \log E \left[ \frac{q(u)}{p(u)} \right]$, so
+ \begin{align}
+           H(U) - H_q(U) &\leq \log E \left[ \frac{q(u)}{p(u)} \right] \\
+           &= \log \sum\limits_{u \in \mathcal{U}} p(u) \frac{q(u)}{p(u)} \\
+           &= \log \sum\limits_{u \in \mathcal{U}} q(u) \\
+          &= \log 1 \\
+           &= 0
+           \end{align}
+
+Therefore, we see that
+ \begin{equation*}
+           H(U) - H_q(U) \leq 0.
+       \end{equation*}
+Equality only holds when Jensen's yields equality. That only happens when $\frac{q(u)}{p(u)}$ is deterministic, which only occurs when $q = p$, i.e. the distributions are identical.
+
+\begin{definition} \textbf{Relative Entropy.} An important measure of distance between probability measures is relative entropy, or the Kullback--Leibler divergence: 
+      \begin{equation} \label{eq:relEntr}
+        D(p || q) \triangleq \sum\limits_{u \in \mathcal{U}} p(u) \log \frac{p(u)}{q(u)} = E \left[ \log \frac{p(u)}{q(u)} \right]
+       \end{equation}
+\end{definition}
+
+Note that property 3 is equivalent to saying that the relative entropy is always greater than or equal to $0$, with equality iff $q = p$ (convince yourself).
+
+\item If $X_1, X_2, \ldots, X_n$ are independent random variables, then
+      \begin{equation} \label{eq:prop4}
+        H(X_1, X_2, \ldots, X_n) = \sum\limits_{i = 1}^{n} H(X_i)
+       \end{equation}
+
+\textbf{Proof:}
+      \begin{align}
+        H(X_1, X_2, \ldots, X_n) &= E \left[ \log \frac{1}{p(x_1, x_2, \ldots, x_n)} \right] \\
+        &= E \left[ - \log p(x_1, x_2, \ldots, x_n) \right] \\
+        &= E \left[ - \log p(x_1) p(x_2) \ldots p(x_n) \right] \\
+        &= E \left[ - \sum\limits_{i = 1}^{n} \log p(x_i) \right] \\
+        &= \sum\limits_{i = 1}^{n} E \left[ - \log p(x_i) \right] \\
+        &= \sum\limits_{i = 1}^{n} H(X_i).
+       \end{align}
+
+Therefore, the entropy of independent random variables is the sum of the individual entropies. This is also intuitive, since the uncertainty (or surprise) associated with each random variable is independent. 
+
+\begin{definition}
+	\textbf{Conditional Entropy of $X$ given $Y$}
+\begin{align} 
+H(X|Y) &\triangleq \E\big[\log\frac{1}{P(X|Y)}\big] \\
+&= \sum_{x,y}{\Pr{x,y}\frac{1}{\log P(x|y)}} \\
+&= \sum_y{P(y) \big[\sum_xP(x|y)\frac{1}{\log P(x|y)}\big]}\\
+&= \sum_y{P(y) H(X|y)}. 
+\end{align}
+\end{definition}
+{\em Note:} The conditional entropy is a functional of the joint distribution of $(X, Y)$. Note that this is also a number, and denotes the ``average'' surprise in X when we observe Y. Here, by definition, we also average over the realizations of Y. Note that the conditional entropy is NOT a function of the random variable $Y$. In this sense, it is very different from a familar object in probability, the conditional expectation $E[X|Y]$ which is a random variable (and a function of $Y$).  
+
+\item $ H(X|Y) \leq H(X), \text{equal iff } X \perp Y $
+
+\textbf{Proof: }
+	\begin{align}
+	H(X) - H(X|Y) &= \E\big[\log\frac{1}{P(X)}\big] - \E\big[\log\frac{1}{P(X|Y)}\big] \\
+	&= \E\big[\log\frac{P(X|Y)}{P(X)}\frac{P(Y)}{P(Y)}\big] = \E\big[\log\frac{P(X,Y)}{P(X)P(Y)}]\\
+	&= \sum_{x,y}P(x,y)\log \frac{P(x, y)}{P(x)P(y)} \\
+	&= D(P_{x,y}||P_x \times P_y) \\
+	&\geq 0 \qquad \text{equal iff } X \perp Y.
+\end{align} 
+The last step follows from the non-negativity of relative entropy. Equality holds iff $P_{x,y} \equiv P_x \times P_y$, i.e. X and Y are independent. 
+\begin{definition}\textbf{Joint Entropy of $X$ and $Y$}\end{definition}
+\begin{align}
+H(X,Y) &\triangleq \E\big[\log\frac{1}{P(X,Y)}\big] \\
+&= \E\big[\log\frac{1}{P(X)P(Y|X)}]
+\end{align}
+
+\item Chain rule for entropy:
+\begin{align}
+H(X,Y) &= H(X) + H(Y|X) \\
+&= H(Y) + H(X|Y)
+\end{align}
+
+\item Sub-additivity of entropy
+\begin{align}
+H(X, Y) \leq H(X) + H(Y),
+\end{align}
+with equality iff $X \perp Y$ (follows from the property that conditioning does not increase entropy)
+\begin{definition}\textbf{Mutual information between $X$ and $Y$}\end{definition}
+We now define the mutual information between random variables X and Y distributed according to the joint PMF $P(x,y)$:
+\begin{align}
+I(X,Y) &\triangleq H(X) + H(Y) - H(X,Y)\\
+	&= H(Y) - H(Y|X)\\
+	&= H(X) - H(X|Y)\\
+	&= D(P_{x,y}||P_x \times P_y)
+	\end{align}
+The mutual information is a canonical measure of the information conveyed by one random variable about another. The definition tells us that it is the reduction in average surprise, upon observing a correlated random variable. The mutual information is again a functional of the joint distribution of the pair $(X,Y)$. It can also be viewed as the relative entropy between the joint distribution, and the product of the marginals. 
+
+\end{enumerate}
+
+
+
+
+
+
+
+
+\end{document}
