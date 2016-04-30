@@ -5,149 +5,181 @@
 %\usepackage{amsmath}
 
 \begin{document}
-\lecturetitle{10}{Lecture 10: State Estimation of Hidden Markov Process}{Dominic Delgado, Lewis Guignard, Greg Kehoe}{04/28/2016}
-In this lecture, we complete and expand the recursive algorithm for state estimation of a hidden markov process through a memoryless noisy channel. 
-
-
-
-
-\section{Recap}
-
-Let there be a Markov Process $\{X_n\}_{n \geq 1}$ sent through a memoryless channel, and measurements $\{Y_n\}_{n \geq 1}$.
-
-Then the stochastic system is characterized by:
-
-\begin{align*}
-P_{x_1}, \{P_{X_t | X_{t-1}}\}_{t \geq 2}, \{P_{Y_t | X_t}\}_{t \geq 1}
-\end{align*}
-
-\textbf{Let}
-\begin{align*}
-\alpha_t(X_t) &= p(x_t | y^t)\\
-\beta_t(X_t) &= p(x_t | y^{t-1})\\
-\gamma_t(X_t) &= p(x_t) | y^n\\
-\end{align*}
-
-In lecture 9, we found that:
-
-\begin{align*}
-\alpha_t(X_t) &= \frac{\beta_t(X_t)p(y_t | x_t)}{\sum_{\tilde{x}_t}^{}\beta_t(X_t)p(y_t | \tilde{x}_t)}\\
-\beta_{t+1}(X_t) &= \sum_{x_t}^{}\alpha_t(x_t)p(x_{t+1} | x_t)\\
-\gamma_t(X_t) &= \sum_{X_{t+1}}^{}\frac{\gamma_{t+1}\alpha_{t+1}p(x_{t+!} | x_t)}{\beta_{t+1}(X_{t+1})}
-\end{align*}
-
-\section{Finding $ P(x^n | y^n) $}
-\textbf{Claim:} 
-\begin{align*}
-X^{t-1} - (X_t, Y^n) - X^{n}_{t+1}\\
-\end{align*}
-
-i.e. given all observations $Y^n$, $X^n$ is still a Markov Process.
-
-\textbf{Proof:}  We prove using the "Markov Lemma", described in Lecture 9.
-\begin{align*}
-P(x^n,y^n) &= \prod_{i=1}^{n}p(x_i | x_{i-1})p(y_i | x_i)\\
-&= \prod_{i=1}^{t}p(x_i | x_{i-1})p(y_i | x_i) \prod_{i = t+1}^{n}p(x_i | x_{i-1})p(y_i | x_i)\\
-\end{align*}
-
-These two terms can be seen as two general funtions:
-
-\begin{align*}
-&= \phi_1(x^t, y^t)\phi_2(x_{t}^{n}, y_{t+1}^{n})\\
-&= \phi_1(x^{t+1}, x_t, y^n) \phi_2(x_t, x_{t+1}^{n}, y^n)\\
-\end{align*}
-
-.. Where we've trivially expanded the vectors $Y$ to go to $n$ as this includes any subset of $Y^n$.  
-
-Looking at the posterior:
-\begin{align*}
-p(x^n | y^n) &= p(x_n | y^n) p(x_{n-1} | x_n, y^n)p(x_{n-2} | x_{n-1}, y^n),\dots, p(x_1 | x_2, y^n)\\
-&= p(x_n | y^n) \prod_{t=1}^{n-1}p(x_t | x_{t+1}, y^t)\\
-\end{align*}
-
-We let $y^n \rightarrow y^t$ because we already have clean state information $x_{t+1}$
-
-\begin{align*}
-p(x_t | x_{t+1}, y^t) &= \frac{p(x_t , x_{t+1} | y^t)}{p(x_{t+1} | y^t)} = \frac{p(x_t | y^t) p(x_{t+1} | x_t , y^t)}{p(x_{t+1} | y^t)}\\
-&= \frac{\alpha_t (x_t) p(x_{t+1} | x_t)}{\beta_{t+1}(x_{t+1})}\\
-\Rightarrow p(x^n | y^n) &= \gamma_n (x_n) \prod_{t=1}^{n-1} \frac{\alpha_t (x_t) p(x_{t+1} | x_t)}{\beta_{t+1} (x_{t+1})}\\
-\log p(x^n | y^n) &= \sum_{t = 1}^{n} g_t (x_t, x_{t+1})
-\end{align*}
-
-Where  we define $g$ as:
-\begin{align*}
-g_t(x_t, x_{t+1}) &:= log \frac{\alpha_t (x_t) p(x_{t+1} | x_t)}{\beta_{t+1}(x_{t+1})}, \hspace{2 mm} t \in \{1, \dots , n-1\}\\
-g_t(x_t, x_{t+1}) &:= log \gamma_n (x_n), \hspace{2 mm } t = n
-\end{align*}	
-
-\begin{itemize}
-	\item  if $g$ was a function of $x_t$ only, we could simply use a greedy algorithm and maximize each term.
-	\item since $g_t$ is a function of both $x_t, x_{t+1}$, we can be \textit{almost} greedy
-\end{itemize}
-
-What we want:
-
-\begin{align*}
-\max_{x^n} \sum_{t=1}^{n} g_t (x_t , x_{t+1})
-\end{align*}
-
-\begin{definition}
-	for $1 \leq k \leq n$, Let
+	\lecturetitle{10}{Lecture 10: State Estimation of Hidden Markov Process}{Dominic Delgado, Lewis Guignard, Greg Kehoe}{04/28/2016}
+	In this lecture, we complete and expand the recursive algorithm for state estimation of a hidden markov process through a memoryless noisy channel. 
+	
+	
+	
+	
+	\section{Recap}
+	
+	Let there be a Markov Process $\{X_n\}_{n \geq 1}$ sent through a memoryless channel, and measurements $\{Y_n\}_{n \geq 1}$.
+	
+	Then the stochastic system is characterized by:
+	
 	\begin{align*}
-	M_k (x_k) := \max_{x_{k+1}^{n}} \sum_{t=k}^{n} g_t (x_t, x+{t+1})
+		P_{x_1}, \{P_{X_t | X_{t-1}}\}_{t \geq 2}, \{P_{Y_t | X_t}\}_{t \geq 1}
 	\end{align*}
-\end{definition}
-
-Then,
-
-\begin{align*}
-M_k (x_k) &= \max_{x_{k+1}} \max_{x_{k+2}^n} g_k (x_k, x_{k+1}) + \sum_{t=k+1}^{n} g_t (x_t, x_{t+1})\\
-&=  \max_{x_{k+1}}  (g_k (x_k, x_{k+1}) + \max_{x_{k+2}^{n}}  \sum_{t=k+1}^{n} g_t (x_t, x_{t+1})  ) \\
-&=  \max_{x_{k+1}}  (g_k (x_k, x_{k+1}) + M_{k+1}(x_{k+1}  ))\\ 
-\end{align*}
-
-.. and we see the recursive relationship
-
-\section{Bellman Equations, aka Viterbi Algorithm}
-
-The Bellman Equations, referred to in the communication setting as the Viterbi Algorithm, is an application of a technique called dynamic programming. Using the recurrence equations derived in the previous section, we can express the Viterbi Algorithm as follows.
-
-\begin{algorithm}
-
-\begin {algorithmic}[1]
-\Function {Viterbi}{}
-
-    \State $M_n(x_n) \gets log \gamma_n(x_n)$ \Comment{Initialization}
-    \For {$1 \leq k \leq n$}
-        \State $M[k] \gets M_k(x_k) = \max_{x_{k+1}}  (g_k (x_k, x_{k+1}) + M_{k+1}(x_{k+1}))$
-    \EndFor
-    \State $M \gets \max_{x_1} M_1 (x_1)$ \Comment{Maximum Likelihood of Sequence}
-\EndFunction
-\end{algorithmic}
+	
+	\textbf{Let}
+	\begin{align*}
+		\alpha_t(X_t) &= p(x_t | y^t)\\
+		\beta_t(X_t) &= p(x_t | y^{t-1})\\
+		\gamma_t(X_t) &= p(x_t) | y^n\\
+	\end{align*}
+	
+	In lecture 9, we found that:
+	
+	\begin{align*}
+		\alpha_t(X_t) &= \frac{\beta_t(X_t)p(y_t | x_t)}{\sum_{\tilde{x}_t}^{}\beta_t(X_t)p(y_t | \tilde{x}_t)}\\
+		\beta_{t+1}(X_t) &= \sum_{x_t}^{}\alpha_t(x_t)p(x_{t+1} | x_t)\\
+		\gamma_t(X_t) &= \sum_{X_{t+1}}^{}\frac{\gamma_{t+1}\alpha_{t+1}p(x_{t+!} | x_t)}{\beta_{t+1}(X_{t+1})}
+	\end{align*}
+	
+	\section{Finding $ P(x^n | y^n) $}
+	
+	Until now, we have been considering the posterior distribution of a single $X_t$, but in certain settings, e.g. Communications, it may be useful to consider the posterior distribution of the whole sequence $X^n$.\\
+	
+	First, let us prove that the state of a HMP conditioned on the observations $Y^{n}$ is still Markov.\\
+	
+	\textbf{Claim:} 
+	\begin{align*}
+		X^{t-1} - (X_t, Y^n) - X^{n}_{t+1}\\
+	\end{align*}
+	
+	\textbf{Proof:} 
+	\begin{align*}
+		P(x^n,y^n) &= \prod_{i=1}^{n}p(x_i | x_{i-1})p(y_i | x_i)\\
+		&= \prod_{i=1}^{t}p(x_i | x_{i-1})p(y_i | x_i) \prod_{i = t+1}^{n}p(x_i | x_{i-1})p(y_i | x_i)\\
+	\end{align*}
+	
+	These two terms can be seen as two general functions:
+	
+	\begin{align*}
+		&= \phi_1(x^t, y^t)\phi_2(x_{t}^{n}, y_{t+1}^{n})\\
+		&= \phi_1(x^{t+1}, x_t, y^n) \phi_2(x_t, x_{t+1}^{n}, y^n)\\
+	\end{align*}
+	
+	Here we have trivially expanded $Y^t$ and $Y_{t+1}^n$ to go from $1$ to $n$, since this includes any subset of $Y^n$.  
+	
+	Recall that the Markov chain $X - Y - Z$ holds iff $p(x,y,z)=\phi_1(x,y)\phi_2(y,z)$. Therefore 
+	
+	$X^{t-1} - (X_t, Y^n) - X^{n}_{t+1}$.\\
+	
+	Now we are ready to derive the posterior probability of the sequence $X^n$. Using the above lemma, we 
+	
+	may expand the probability as follows:
+	
+	\begin{align*}
+		p(x^n | y^n) &= p(x_n | y^n) p(x_{n-1} | x_n, y^n)p(x_{n-2} | x_{n-1}, y^n),\dots, p(x_1 | x_2, y^n)\\
+		&= p(x_n | y^n) \prod_{t=1}^{n-1}p(x_t | x_{t+1}, y^t)\\
+	\end{align*}
+	
+	We let $y^n \rightarrow y^t$ because we already have clean state information $x_{t+1}$
+	
+	\begin{align*}
+		p(x_t | x_{t+1}, y^t) &= \frac{p(x_t , x_{t+1} | y^t)}{p(x_{t+1} | y^t)} = \frac{p(x_t | y^t) p(x_{t+1} | x_t , y^t)}{p(x_{t+1} | y^t)}\\
+		&= \frac{\alpha_t (x_t) p(x_{t+1} | x_t)}{\beta_{t+1}(x_{t+1})}\\
+		\Rightarrow p(x^n | y^n) &= \gamma_n (x_n) \prod_{t=1}^{n-1} \frac{\alpha_t (x_t) p(x_{t+1} | x_t)}{\beta_{t+1} (x_{t+1})}\\
+	\end{align*}
+	
+	\textbf{Maximum Likelihood Estimation of $X^n$}
+	\begin{align*}
+		p(x^n | y^n) &= \gamma_n (x_n) \prod_{t=1}^{n-1} \frac{\alpha_t (x_t) p(x_{t+1} | x_t)}{\beta_{t+1} (x_{t+1})}\\
+		\log p(x^n | y^n) &= \sum_{t = 1}^{n} g_t (x_t, x_{t+1})
+	\end{align*}
+	
+	Where  we define $g$ as:
+	\begin{align*}
+		g_t(x_t, x_{t+1}) &:= log \frac{\alpha_t (x_t) p(x_{t+1} | x_t)}{\beta_{t+1}(x_{t+1})}, \hspace{2 mm} t \in \{1, \dots , n-1\}\\
+		g_t(x_t, x_{t+1}) &:= log \gamma_n (x_n), \hspace{2 mm } t = n
+	\end{align*}	
+	
+	
+	If $g$ were a function of $x_t$ only, we could simply use a greedy algorithm and maximize each term. Since 
+	
+	$g_t$ is a function of both $x_t, x_{t+1}$, we can be \textit{almost} greedy.\\
+	
+	What we want:
+	
+	\begin{align*}
+		\max_{x^n} \sum_{t=1}^{n} g_t (x_t , x_{t+1})
+	\end{align*}
+	
+	\begin{definition}
+		for $1 \leq k \leq n$, Let
+		\begin{align*}
+			M_k (x_k) := \max_{x_{k+1}^{n}} \sum_{t=k}^{n} g_t (x_t, x+{t+1})
+		\end{align*}
+	\end{definition}
+	
+	Then,
+	
+	\begin{align*}
+		M_k (x_k) &= \max_{x_{k+1}} \max_{x_{k+2}^n} (g_k (x_k, x_{k+1}) + \sum_{t=k+1}^{n} g_t (x_t, x_{t+1}))\\
+		&=  \max_{x_{k+1}}  (g_k (x_k, x_{k+1}) + \max_{x_{k+2}^{n}}  \sum_{t=k+1}^{n} g_t (x_t, x_{t+1})  ) \\
+		&=  \max_{x_{k+1}}  (g_k (x_k, x_{k+1}) + M_{k+1}(x_{k+1}  ))\\ 
+	\end{align*}
+	
+	Since $g(x_n,x_{n+1})=g(x_n)=log \gamma_n (x_n)$ only depends on one term, $x_n$, we may first compute $M_n(x_n)$, and that allows us to start computing terms that depend on two variables ($M_{n-1}$, etc.). This recursive computation is sometimes called the Viterbi Algorithm.
+	
+	\section{Bellman Equations, aka Viterbi Algorithm}
+	
+	The Bellman Equations, referred to in the communication setting as the Viterbi Algorithm, is an application of a technique called dynamic programming. Using the recurrence equations derived in the previous section, we can express the Viterbi Algorithm as follows.
+	
+	\begin{algorithm}
+		
+		\begin {algorithmic}[1]
+		\Function {Viterbi}{}
+		
+		\State $M_n(x_n) \gets log \gamma_n(x_n)$ \Comment{Initialization}
+		\For {$1 \leq k \leq n$}
+		\State $M[k] \gets M_k(x_k) = \max_{x_{k+1}}  (g_k (x_k, x_{k+1}) + M_{k+1}(x_{k+1}))$
+		\EndFor
+		\State $M \gets \max_{x_1} M_1 (x_1)$ \Comment{Maximum Likelihood of Sequence}
+		\EndFunction
+	\end{algorithmic}
 \end{algorithm}
 
 Note that the maximizing sequence ($X_1^{ML}, X_2^{ML}, ... X_n^{ML}) = argmax_{x^n} P(X^n|Y^n)$), where
 \begin{align*}
-X_1^{ML} &= argmax_{X_1} M_1(X_1), X_2^{ML} = argmax_{X_2} M_2(X_2), ...\\
-X_{k+1}^{ML} &= argmax_{X_{k+1}}(g_k(x_k, x_{k+1}) + M_{k+1}(X_{k+1}))
+	X_1^{ML} &= argmax_{X_1} M_1(X_1), X_2^{ML} = argmax_{X_2} M_2(X_2), ...\\
+	X_{k+1}^{ML} &= argmax_{X_{k+1}}(g_k(x_k, x_{k+1}) + M_{k+1}(X_{k+1}))
 \end{align*}
 
- 
- \subsection{Maximizing Sequence:}
- \begin{align*}
- &(x_{1}^{ML}, x_{2}^{ML}, \dots , x_{n}^{ML})\\
- \text{where: } x_{1}^{ML} &= \argmax_{x_1} M(x_1)\\
- \text{and: } x_{k+1}^{ML} &= \argmax_{x_{k+1}} ( g_k(x_k, x_{k+1}) + M_{k+1} (x_{k+1})
- \end{align*}
+
+\textbf{Maximizing Sequence:}
+\begin{align*}
+	&(x_{1}^{ML}, x_{2}^{ML}, \dots , x_{n}^{ML})\\
+	\text{where: } x_{1}^{ML} &= \argmax_{x_1} M(x_1)\\
+	\text{and: } x_{k+1}^{ML} &= \argmax_{x_{k+1}} ( g_k(x_k, x_{k+1}) + M_{k+1} (x_{k+1})
+\end{align*}
+
+\section{Reflections}
+
+\subsection{Optimality Conditions}
+Let us distinguish between the maximizing the likelihood of the whole sequence versus maximizing the likelihood of getting each individual bit correct. 
+Consider the random vector $X^n$ with the following distribution:
+\[ X^n = \begin{cases} 
+1111...11 & w.p.  0.1 \\
+1000...00 & w.p.  \frac{1}{n}0.9 \\
+0100...00 & w.p.  \frac{1}{n}0.9 \\
+0010...00 & w.p.  \frac{1}{n}0.9 \\
+...
+\end{cases}
+\]
+Clearly the ML sequence is the all-one sequence, but 
+$P(X_i=1)=0.1+\frac{0.9}{n}<P(X_i)=0$,
+so if the goal is to guess the whole sequence correctly, we should guess all ones, but if the goal is to make as few bit errors as possible on average, we should guess all zeros.
 
 \subsection{Reflection on forward - backards recursion}
 
 Consider:
 
 \begin{align*}
-X \sim p_x \rightarrow \Aboxed{p_{Y|X}} \rightarrow Y\\
-p_{X|Y}(x|y) &= \frac{p_X(x) p_{Y|X}(y|x)}{\sum_{\tilde{x}}^{} p_{Y|X}(y|x)}\\
-= F(p_X, p_{Y|X}, y) \\
+	X \sim p_x \rightarrow \Aboxed{p_{Y|X}} \rightarrow Y\\
+	p_{X|Y}(x|y) &= \frac{p_X(x) p_{Y|X}(y|x)}{\sum_{\tilde{x}}^{} p_{Y|X}(y|x)}\\
+	= F(p_X, p_{Y|X}, y) \\
 \end{align*}
 
 $F(p_X, p_{Y|X}, y)$ outputs a vector.
@@ -156,7 +188,7 @@ $F(p_X, p_{Y|X}, y)$ outputs a vector.
 We can also write $F$ as
 
 \begin{align*}
-F(p_{X}, p_{Y|X}) &= \sum_{\tilde{x}}^{} p_x(\tilde{x})p_{Y|X}(y|\tilde{x}) = G(p_X, p_{Y|X})\\
+	F(p_{X}, p_{Y|X}) &= \sum_{\tilde{x}}^{} p_x(\tilde{x})p_{Y|X}(y|\tilde{x}) = G(p_X, p_{Y|X})\\
 \end{align*}
 
 which corresponds to the matrix for the entire distribition $P_{x|y}$.
@@ -164,12 +196,12 @@ which corresponds to the matrix for the entire distribition $P_{x|y}$.
 
 Forward Recursions redefined
 \begin{align}
-\alpha_t&= F(\beta_t, p_{Y_t|X_t}, y_t)\\
-\beta_{t+1} &= G(\alpha_t, p_{x_{t+1} | x_t}))
+	\alpha_t&= F(\beta_t, p_{Y_t|X_t}, y_t)\\
+	\beta_{t+1} &= G(\alpha_t, p_{x_{t+1} | x_t}))
 \end{align}
 
 Backward Recursions redefined
 \begin{align}
-\gamma_t &= G(\gamma_{t+1}, F(\alpha_t, P_{x_{t+1} | x_t}))
+	\gamma_t &= G(\gamma_{t+1}, F(\alpha_t, P_{x_{t+1} | x_t}))
 \end{align}
 \end{document}
