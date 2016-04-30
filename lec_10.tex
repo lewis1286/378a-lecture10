@@ -1,6 +1,7 @@
 \documentclass{article}
 \usepackage{ee378a}
 \usepackage{amsmath, mathtools}
+\usepackage{algorithm, algpseudocode}
 %\usepackage{amsmath}
 
 \begin{document}
@@ -17,7 +18,7 @@ Let there be a Markov Process $\{X_n\}_{n \geq 1}$ sent through a memoryless cha
 Then the stochastic system is characterized by:
 
 \begin{align*}
-P_x, \{P_{X_t | X_{t-1}}\}_{t \geq 2}, \{P_{Y_t | X_t}\}_{t \geq 1}
+P_{x_1}, \{P_{X_t | X_{t-1}}\}_{t \geq 2}, \{P_{Y_t | X_t}\}_{t \geq 1}
 \end{align*}
 
 \textbf{Let}
@@ -41,7 +42,7 @@ In lecture 9, we found that:
 X^{t-1} - (X_t, Y^n) - X^{n}_{t+1}\\
 \end{align*}
 
-ie given all observations $Y^n$, $X^n$ is still a Markov Process.
+i.e. given all observations $Y^n$, $X^n$ is still a Markov Process.
 
 \textbf{Proof:}  We prove using the "Markov Lemma", described in Lecture 9.
 \begin{align*}
@@ -70,7 +71,7 @@ We let $y^n \rightarrow y^t$ because we already have clean state information $x_
 p(x_t | x_{t+1}, y^t) &= \frac{p(x_t , x_{t+1} | y^t)}{p(x_{t+1} | y^t)} = \frac{p(x_t | y^t) p(x_{t+1} | x_t , y^t)}{p(x_{t+1} | y^t)}\\
 &= \frac{\alpha_t (x_t) p(x_{t+1} | x_t)}{\beta_{t+1}(x_{t+1})}\\
 \Rightarrow p(x^n | y^n) &= \gamma_n (x_n) \prod_{t=1}^{n-1} \frac{\alpha_t (x_t) p(x_{t+1} | x_t)}{\beta_{t+1} (x_{t+1})}\\
-log p(x^n | y^n) &= \sum_{t = 1}^{n} g_t (x_t, x_{t+1})
+\log p(x^n | y^n) &= \sum_{t = 1}^{n} g_t (x_t, x_{t+1})
 \end{align*}
 
 Where  we define $g$ as:
@@ -109,14 +110,28 @@ M_k (x_k) &= \max_{x_{k+1}} \max_{x_{k+2}^n} g_k (x_k, x_{k+1}) + \sum_{t=k+1}^{
 
 \section{Bellman Equations, aka Viterbi Algorithm}
 
+The Bellman Equations, referred to in the communication setting as the Viterbi Algorithm, is an application of a technique called dynamic programming. Using the recurrence equations derived in the previous section, we can express the Viterbi Algorithm as follows.
 
-aka dynamic programming
+\begin{algorithm}
 
+\begin {algorithmic}[1]
+\Function {Viterbi}{}
+
+    \State $M_n(x_n) \gets log \gamma_n(x_n)$ \Comment{Initialization}
+    \For {$1 \leq k \leq n$}
+        \State $M[k] \gets M_k(x_k) = \max_{x_{k+1}}  (g_k (x_k, x_{k+1}) + M_{k+1}(x_{k+1}))$
+    \EndFor
+    \State $M \gets \max_{x_1} M_1 (x_1)$ \Comment{Maximum Likelihood of Sequence}
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+Note that the maximizing sequence ($X_1^{ML}, X_2^{ML}, ... X_n^{ML}) = argmax_{x^n} P(X^n|Y^n)$), where
 \begin{align*}
-& \text{Initialization: }  M_n(x_n) = log \gamma_n(x_n)\\
-& \text{Recursion: For } 1 \leq k \leq n \text{, compute } M_k \text{via} M_{k+1}\\
-& \text{Finally: }  M = \max_{x_1} M_1 (x_1)
- \end{align*}
+X_1^{ML} &= argmax_{X_1} M_1(X_1), X_2^{ML} = argmax_{X_2} M_2(X_2), ...\\
+X_{k+1}^{ML} &= argmax_{X_{k+1}}(g_k(x_k, x_{k+1}) + M_{k+1}(X_{k+1}))
+\end{align*}
+
  
  \subsection{Maximizing Sequence:}
  \begin{align*}
@@ -132,15 +147,19 @@ Consider:
 \begin{align*}
 X \sim p_x \rightarrow \Aboxed{p_{Y|X}} \rightarrow Y\\
 p_{X|Y}(x|y) &= \frac{p_X(x) p_{Y|X}(y|x)}{\sum_{\tilde{x}}^{} p_{Y|X}(y|x)}\\
-= F(p_X, p_{Y|X}, y) &\bullet \text{a vector}
+= F(p_X, p_{Y|X}, y) \\
 \end{align*}
 
-Also, 
+$F(p_X, p_{Y|X}, y)$ outputs a vector.
+\\
+\\
+We can also write $F$ as
+
 \begin{align*}
-F(p_{X}, p_{Y|X}) &\bullet \text{a matrix}
-p_Y(y) &= \sum_{\tilde{x}}^{} p_x(\tilde{x})p_{Y|X}(y|\tilde{x}) = G(p_X, p_{Y|X})\\
+F(p_{X}, p_{Y|X}) &= \sum_{\tilde{x}}^{} p_x(\tilde{x})p_{Y|X}(y|\tilde{x}) = G(p_X, p_{Y|X})\\
 \end{align*}
 
+which corresponds to the matrix for the entire distribition $P_{x|y}$.
 \subsection{Recursions redefined}
 
 Forward Recursions redefined
